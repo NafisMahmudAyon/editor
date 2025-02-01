@@ -1,6 +1,8 @@
 'use client'
+// import ExpandingInput from '@/components/BuilderUI/ExpandingInput'
+import useEditor, { Block, BlockOptions } from '@/context/editorContext'
 import React, { HTMLAttributes } from 'react'
-import { cn } from '../../utils/cn'
+import { cn } from '../../../utils/cn'
 
 type HeadingVariant =
   | 'h1'
@@ -17,10 +19,12 @@ type HeadingVariant =
 
 interface HeadingProps extends HTMLAttributes<HTMLHeadingElement> {
   variant?: HeadingVariant
-  tagName?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6"
-  children?: React.ReactNode
+  tagName?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "caption" | "span" | 'div'
+  children?: string | false
   className?: string
   onClick?: () => void
+  preview?: boolean
+  blockData?: Block
 }
 
 export const Heading: React.FC<HeadingProps> = ({
@@ -28,8 +32,39 @@ export const Heading: React.FC<HeadingProps> = ({
   tagName = "h2",
   children,
   className = '',
+  blockData,
+  preview = false,
   ...rest
 }) => {
+  const { selected, setSelected, blocks, setBlocks, onChangeUpdateBlockOptions } = useEditor();
+
+  // const [isEditing, setIsEditing] = useState(false);
+
+  // useEffect(() => {
+  //   if (blockData && blockData.id === selected?.id) {
+  //     setIsEditing(true);
+  //   }
+  // }, [blockData, selected])
+
+  const handleOptionChange = (key: keyof BlockOptions, value: string) => {
+    if (selected) {
+      // Update the blocks state recursively
+      const updatedBlocks = onChangeUpdateBlockOptions(blocks, selected.id, key, value);
+      setBlocks(updatedBlocks);
+
+      // Update the selected block state
+      setSelected({
+        ...selected,
+        options: {
+          ...selected.options,
+          block: {
+            ...selected.options.block,
+            [key]: value,
+          },
+        },
+      });
+    }
+  };
   const TagName = tagName
   // const getComponent = (): React.ElementType => {
   //   switch (variant) {
@@ -82,11 +117,16 @@ export const Heading: React.FC<HeadingProps> = ({
   const styles = getStyles()
 
   return (
+    <>
     <TagName
-      className={cn("text-primary-800 dark:text-primary-200", styles, className)}
+      className={cn("text-primary-800 dark:text-primary-200 h-max", styles, className, preview && blockData?.options?.block?.className)}
       {...rest}
-    >
-      {children}
-    </TagName>
+        dangerouslySetInnerHTML={{ __html: blockData?.options?.block?.text ?? "" }}
+    />
+      {/* {selected?.options?.block?.text} */}
+      {/* {!isEditing ? selected?.options?.block?.text : <ExpandingInput />
+      } */}
+    {/* </TagName> */}
+    </>
   )
 }

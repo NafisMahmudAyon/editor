@@ -5,14 +5,15 @@ import { TabContent, TabItem, TabList, Tabs } from 'aspect-ui/Tabs'
 import ListView from './ListView'
 import { DefaultIcon } from './Icons'
 import { Add02Icon } from 'hugeicons-react'
+import { Button, Input } from 'aspect-ui'
 
 const LeftBar = () => {
 
-  const { elementTemplates, setDraggedTemplate } = useEditor()
+  const { elementTemplates, setDraggedTemplate, handleSave, name, slug, status, setName, setSlug, setStatus } = useEditor()
 
   return (
     <div>
-      <Sidebar>
+      <Sidebar className='h-full'>
         <Tabs defaultActive="item-1">
           <TabList>
             <TabItem id="item-1">
@@ -46,7 +47,15 @@ const LeftBar = () => {
             <ListView />
           </TabContent>
         </Tabs>
-        <Add02Icon size={32} />
+        <Input value={name} onChange={(e) => setName(e.target.value)} label="Page Name" />
+        <Input value={slug} onChange={(e) => setSlug(e.target.value)} label="Page Slug" />
+        <select value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="published">Published</option>
+          <option value="draft">Draft</option>
+          <option value="private">Private</option>
+          <option value="public">Public</option>
+        </select>
+        <Button className='flex items-center gap-2' onClick={handleSave}><Add02Icon className='size-5' />Save Page</Button>
       </Sidebar>
     </div>
   )

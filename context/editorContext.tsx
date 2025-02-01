@@ -2,14 +2,19 @@
 
 import { templates } from "@/components/elementTemplates";
 import { IconProps } from "@/components/Icons";
+import { supabase } from "@/hooks/supabaseClient";
+import { useUser } from "@clerk/nextjs";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-interface EditorOptions {
+export interface EditorOptions {
 	icon?: React.FC<IconProps>;
 }
 
-interface BlockOptions {
+export interface BlockOptions {
 	imageLink?: string;
+	tagName?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | "p" | "caption" | "span" | 'div';
+	className?: string;
+	text?: string | false;
 }
 
 interface BlockProperties {
@@ -31,8 +36,8 @@ export interface Block {
 
 // Define the EditorContext type
 interface EditorContextType {
-	selected: number | null; // Replace 'any' with a specific type if needed
-	setSelected: React.Dispatch<React.SetStateAction<number | null>>;
+	selected: Block | null; // Replace 'any' with a specific type if needed
+	setSelected: React.Dispatch<React.SetStateAction<Block | null>>;
 	selectedType: string | null; // Replace 'any' with a specific type if needed
 	setSelectedType: React.Dispatch<React.SetStateAction<string | null>>;
 	blocks: Block[];
@@ -42,6 +47,21 @@ interface EditorContextType {
 	setDraggedTemplate: (data: Block | null) => void;
 	handleBlockUpdate: (updatedList: Block[], parentId?: number | null) => void;
 	handleTemplateAdd: (template: Block, parentId?: number | null) => void;
+	onChangeUpdateBlockOptions: (blocks: Block[], blockId: number, key: keyof BlockOptions, value: string) => Block[];
+	handleSave: () => void;
+	setName: (data: string) => void;
+	setSlug: (data: string) => void;
+	setStatus: (data: string) => void;
+	name: string
+	slug: string
+	status: string
+	pageId: number | null
+	setPageId: (data: number | null) => void
+	responsive: string
+	setResponsive: (data: string) => void
+	responsiveBlock: Block[]
+	setResponsiveBlock: (data: Block[]) => void
+	findBlockById: (blocks: Block[], id: number) => Block | null
 }
 
 // Create the context
@@ -51,9 +71,10 @@ const EditorContext = createContext<EditorContextType | null>(null);
 export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 	children,
 }) => {
-	const [selected, setSelected] = useState<number | null>(null);
+	const { user } = useUser()
+	const [selected, setSelected] = useState<Block | null>(null);
 	const [selectedType, setSelectedType] = useState<string | null>(null);
-	console.log(selected)
+
 	const elementTemplates: Block[] = templates;
 	const [restApiData, setRestApiData] = useState([
 		{
@@ -65,7 +86,14 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 			name: "users"
 		}
 	])
+	const [page, setPage] = useState({})
+	const [pageId, setPageId] = useState(null)
+	const [name, setName] = useState("")
+	const [slug, setSlug] = useState("")
+	const [status, setStatus] = useState("")
+	const [editorData, setEditorData] = useState({})
 	const [fetchedData, setFetchedData] = useState([])
+	const [responsive, setResponsive] = useState('lg')
 	const [blocks, setBlocks] = useState<Block[]>([
 		{
 			id: 1,
@@ -85,18 +113,88 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 							label: "text-1",
 							content: "New Text Element",
 							parent_id: 2,
-							options: {},
+							options: {
+								block: {
+									tagName: "p",
+									className: "",
+									text: "Dummy Text Content...",
+								},
+							},
 						},
 					],
 					parent_id: 1,
-					options: {},
+					options: {
+						block: {
+							tagName: "div",
+							className: "",
+						},
+					},
 				},
 			],
 			parent_id: null,
-			options: {},
+			options: {
+				block: {
+					tagName: "div",
+					className: "",
+				},
+			},
 		},
 	]);
+	const [responsiveBlock, setResponsiveBlock] = useState(blocks)
+	
+	useEffect(() => {
+		const updateClassNames = (blocks: Block[]): Block[] => {
+			return blocks.map((block) => {
+				// Update className if it exists in block options
+				if (block.options?.block?.className) {
+					const updatedClassName = block.options.block.className
+						.replace(/\bsm:/g, "@sm:")
+						.replace(/\bmd:/g, "@md:")
+						.replace(/\blg:/g, "@lg:")
+						.replace(/\bxl:/g, "@xl:")
+						.replace(/\b2xl:/g, "@2xl:")
+						.replace(/\b3xl:/g, "@3xl:")
+						.trim(); // Remove extra spaces if needed
 
+					block = {
+						...block,
+						options: {
+							...block.options,
+							block: {
+								...block.options.block,
+								className: updatedClassName,
+							},
+						},
+					};
+				}
+
+				// Recursively update child blocks
+				if (block.children && block.children.length > 0) {
+					return { ...block, children: updateClassNames(block.children) };
+				}
+
+				return block;
+			});
+		};
+		setResponsiveBlock(updateClassNames(blocks));
+	}, [responsive, blocks]);
+
+console.log(responsiveBlock)
+	const findBlockById = (blocks: Block[], id: number): Block | null => {
+		for (const block of blocks) {
+			if (block.id === id) {
+				return block;
+			}
+			if (block.children && block.children.length > 0) {
+				const found = findBlockById(block.children, id);
+				if (found) return found;
+			}
+		}
+		return null;
+	};
+
+
+	console.log(blocks)
 	const [draggedTemplate, setDraggedTemplate] = useState<Block | null>(null);
 
 	const findAndRemoveItem = (
@@ -218,33 +316,170 @@ export const EditorProvider: React.FC<{ children: React.ReactNode }> = ({
 				? [...prevBlocks, newItem]
 				: addToParent(prevBlocks);
 		});
+
+		// Automatically set the newly added block as selected
+		setSelected(newItem);
+	};
+
+	// Recursive function to update a block or its children
+	const onChangeUpdateBlockOptions = (blocks: Block[], blockId: number, key: keyof BlockOptions, value: string): Block[] => {
+		return blocks.map((block) => {
+			if (block.id === blockId) {
+				// Update the block options
+				return {
+					...block,
+					options: {
+						...block.options,
+						block: {
+							...block.options.block,
+							[key]: value,
+						},
+					},
+				};
+			}
+
+			// If the block has children, recursively update them
+			if (block.children && block.children.length > 0) {
+				return {
+					...block,
+					children: onChangeUpdateBlockOptions(block.children, blockId, key, value),
+				};
+			}
+
+			// Return the block unchanged if no match
+			return block;
+		});
+	};
+
+	// const handleSave = async () => {
+	// 	if (Object.keys(page).length === 0) {
+	// 		setPage({
+	// 			editorData: editorData,
+	// 			blocks: blocks
+	// 		});
+	// 	} else {
+	// 		if (pageId === null) {
+	// 			console.log("done")
+	// 			await saveToSupabase(); // Call saveToSupabase only if page is not empty
+	// 		} else {
+	// 			console.log("not done")
+	// 			const { data, error } = await supabase
+	// 				.from('pages')
+	// 				.update({
+	// 					name: name,
+	// 					slug: slug,
+	// 					status: status,
+	// 					page_data: page, // Ensure this has valid JSON or structure
+	// 					user_id: user?.id
+	// 				})
+	// 				.eq('id', pageId)
+	// 				.select(); // Request the inserted data
+
+	// 			if (error) {
+	// 				console.error("Error inserting data:", error);
+	// 			} else {
+	// 				console.log("Inserted data:", data);
+	// 			}
+	// 		}
+	// 	}
+	// };
+
+	// // useEffect(() => {
+	// // 	if (Object.keys(page).length > 0) {
+	// // 		saveToSupabase(); // Call saveToSupabase when page is set
+	// // 	}
+	// // }, [page]);
+
+	// const saveToSupabase = async () => {
+	// 	const { data, error } = await supabase
+	// 		.from('pages')
+	// 		.insert([
+	// 			{
+	// 				name: name,
+	// 				slug: slug,
+	// 				status: status,
+	// 				page_data: page, // Ensure this has valid JSON or structure
+	// 				user_id: user?.id
+	// 			}
+	// 		])
+	// 		.select(); // Request the inserted data
+
+	// 	if (error) {
+	// 		console.error("Error inserting data:", error);
+	// 	} else {
+	// 		console.log("Inserted data:", data);
+	// 		setPageId(data[0].id);
+	// 	}
+	// };
+
+	const handleSave = async () => {
+		try {
+			const pageData = {
+				name,
+				slug,
+				status,
+				page_data: { blocks },
+				user_id: user?.id
+			};
+
+			let result;
+
+			if (pageId === null) {
+				result = await supabase
+					.from('pages')
+					.insert([pageData])
+					.select()
+					.single();
+			} else {
+				result = await supabase
+					.from('pages')
+					.update(pageData)
+					.eq('id', pageId)
+					.select()
+					.single();
+			}
+
+			const { data, error } = result;
+
+			if (error) throw error;
+
+			if (data) {
+				setPageId(data.id);
+			}
+		} catch (error) {
+			console.error("Error saving page:", error);
+		}
 	};
 
 	useEffect(() => {
-		if (restApiData.length > 0) {
-			const fetchData = async () => {
-				const dataPromises = restApiData.map(async (element) => {
-					const response = await fetch(element.link);
-					return response.json();
-				});
-				const data = await Promise.all(dataPromises);
-console.log("first")
-				// Use a functional update to ensure you're using the latest state
-				setFetchedData(prevFetchedData => ({
-					...prevFetchedData,
-					...data.reduce((acc, item, index) => {
-						const name = restApiData[index].name ? restApiData[index].name : `api-${index + 1}`;
-						acc[name] = item;
-						return acc;
-					}, {})
-				}));
-			};
+		const fetchPageData = async () => {
+			if (pageId) {
+				const { data, error } = await supabase
+					.from('pages')
+					.select('*')
+					.eq('id', pageId)
+					.single();
 
-			fetchData();
-		}
-	}, [restApiData]); // Dependency array to trigger effect when restApiData changes
+				if (error) {
+					console.error("Error fetching page:", error);
+					return;
+				}
 
-	console.log(fetchedData);
+				if (data) {
+					setName(data.name);
+					setSlug(data.slug);
+					setStatus(data.status);
+					if (data.page_data?.blocks) {
+						setBlocks(data.page_data.blocks);
+					}
+				}
+			}
+		};
+
+		fetchPageData();
+	}, [pageId]);
+
+	console.log(pageId)
 
 	return (
 		<EditorContext.Provider
@@ -260,6 +495,21 @@ console.log("first")
 				setDraggedTemplate,
 				handleBlockUpdate,
 				handleTemplateAdd,
+				onChangeUpdateBlockOptions,
+				handleSave,
+				name,
+				setName,
+				slug,
+				setSlug,
+				status,
+				setStatus,
+				pageId,
+				setPageId,
+				responsive,
+				setResponsive,
+				responsiveBlock,
+				setResponsiveBlock,
+				findBlockById
 			}}
 		>
 			{children}

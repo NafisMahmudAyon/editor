@@ -2,48 +2,48 @@
 import useEditor from '@/context/editorContext'
 import { Sidebar } from 'aspect-ui/Sidebar'
 import { TabContent, TabItem, TabList, Tabs } from 'aspect-ui/Tabs'
-import ListView from './ListView'
-import { DefaultIcon } from './Icons'
 import { Add02Icon } from 'hugeicons-react'
+import { Options as HeadingOptions, Style as HeadingStyle } from './Blocks/Heading'
+import { Options as ContainerOptions, Style as ContainerStyle  } from './Blocks/Container'
+import { Options as TextOptions, Style as TextStyle  } from './Blocks/Text'
+import { Style as ImageStyle } from './Blocks/Image'
 
 const OptionsPanel = () => {
 
-  const { elementTemplates, setDraggedTemplate } = useEditor()
+  const { selected, setSelected, selectedType, setSelectedType } = useEditor()
 
   return (
     <div>
-      <Sidebar>
+      <Sidebar className='h-full'>
         <Tabs defaultActive="item-1">
           <TabList>
             <TabItem id="item-1">
-              Elements
+              Options
             </TabItem>
             <TabItem id="item-2">
-              List
+              Styles
             </TabItem>
           </TabList>
           <TabContent id="item-1">
-            <h1>Elements</h1>
-            <div className="grid grid-cols-2 gap-2 text-[11px]">
-              {elementTemplates.map((template, index) => {
-                return (
-                  <div
-                    key={index}
-                    className="flex items-center flex-col gap-2 px-3 py-2 pt-4 bg-white border border-gray-200 rounded cursor-move hover:border-blue-500 hover:bg-blue-50"
-                    draggable
-                    onDragStart={() => setDraggedTemplate(template)}
-                    onDragEnd={() => setDraggedTemplate(null)}>
-                    {/* <Icon className="w-5 h-5 mr-2 text-gray-600" /> */}
-                    {template.options?.editor?.icon ? <template.options.editor.icon className='size-5' /> : <DefaultIcon />}
-                    <span>{template.label}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <h1>Options</h1>
+            {selected && (
+              <>
+                {selected.type === "heading" && <HeadingOptions />}
+                {selected.type === "container" && <ContainerOptions />}
+                {selected.type === "text" && <TextOptions />}
+              </>
+            )}
           </TabContent>
           <TabContent id="item-2">
-            <h1>List</h1>
-            <ListView />
+            <h1>Styles</h1>
+            {selected && (
+              <>
+                {selected.type === "heading" && <HeadingStyle />}
+                {selected.type === "container" && <ContainerStyle />}
+                {selected.type === "text" && <TextStyle />}
+                {selected.type === "image" && <ImageStyle />}
+              </>
+            )}
           </TabContent>
         </Tabs>
         <Add02Icon size={32} />

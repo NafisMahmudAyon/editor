@@ -9,16 +9,19 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.10.4",
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@heroicons/react": "^2.2.0",
     "@hugeicons/core-free-icons": "^1.0.1",
     "@hugeicons/react": "^1.0.0",
+    "@supabase/supabase-js": "^2.48.1",
     "aspect-ui": "^0.0.70",
     "clsx": "^2.1.1",
     "hugeicons-react": "^0.3.0",
     "next": "15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-quill-new": "^3.3.3",
     "react-sortablejs": "^6.1.4"
   },
   "devDependencies": {

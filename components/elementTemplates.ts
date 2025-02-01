@@ -6,57 +6,14 @@ import { AlignSelectionIcon, AppleReminderIcon, DashedLine01Icon, EdgeStyleIcon,
 export const templates: Block[] = [
 	{
 		id: 0,
-		type: "content",
-		label: "Content",
-		content:
-			"Combo Blocks has completely revolutionized the way our team collaborates. Its seamless integration and flexible features make managing projects so much easier. We've significantly reduced time spent on coordination, allowing us to focus more on creativity.",
-		options: {},
-	},
-	{
-		id: 0,
-		type: "date",
-		label: "date",
-		content: "Dummy date",
-		options: { editor: {} },
-	},
-	{
-		id: 0,
-		type: "tags",
-		label: "tags",
-		content: "Dummy tags",
-		options: { editor: {} },
-	},
-	{
-		id: 0,
-		type: "rate",
-		label: "rate",
-		content: "Dummy rate",
-		options: { editor: {} },
-	},
-	{
-		id: 0,
-		type: "personName",
-		label: "Person Name",
-		content: "Emma Wallace",
-		options: {},
-	},
-	{
-		id: 0,
 		type: "list",
 		label: "List",
 		content: "Creative Director",
 		options: {
 			editor: {
-				icon: ListBulletIcon
-			}
+				icon: ListBulletIcon,
+			},
 		},
-	},
-	{
-		id: 0,
-		type: "accordion",
-		label: "Accordion",
-		content: "",
-		options: { editor: {} },
 	},
 	{
 		id: 0,
@@ -65,8 +22,8 @@ export const templates: Block[] = [
 		content: "Creative  Studio LLC",
 		options: {
 			editor: {
-				icon: PencilEdit01Icon
-			}
+				icon: PencilEdit01Icon,
+			},
 		},
 	},
 	{
@@ -74,9 +31,11 @@ export const templates: Block[] = [
 		type: "divider",
 		label: "Divider",
 		content: "https://createllc.com",
-		options: { editor: {
-			icon: DashedLine01Icon,
-		} },
+		options: {
+			editor: {
+				icon: DashedLine01Icon,
+			},
+		},
 	},
 	{
 		id: 0,
@@ -86,6 +45,11 @@ export const templates: Block[] = [
 		options: {
 			editor: {
 				icon: Heading01Icon,
+			},
+			block: {
+				tagName: "h2",
+				className: "",
+				text: "Dummy Heading",
 			},
 		},
 	},
@@ -101,6 +65,7 @@ export const templates: Block[] = [
 			block: {
 				imageLink:
 					"https://images.unsplash.com/photo-1498050108023-c5249f4df085?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+				className: "",
 			},
 		},
 	},
@@ -111,6 +76,11 @@ export const templates: Block[] = [
 		options: {
 			editor: {
 				icon: EdgeStyleIcon,
+			},
+			block: {
+				tagName: "p",
+				className: "",
+				text: "Dummy Text Content...",
 			},
 		},
 		label: "Text Block",

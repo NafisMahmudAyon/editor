@@ -21,19 +21,19 @@
 }
 
 :root {
-  --background: #ffffff;
+  --background: #fafbeb;
   --foreground: #171717;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #140e05;
     --foreground: #ededed;
   }
 }
 
-body {
+/* body {
   color: var(--foreground);
   background: var(--background);
   font-family: Arial, Helvetica, sans-serif;
-}
+} */
